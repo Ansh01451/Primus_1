@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation, useVerifyLoginMutation, useResendOtpMutation } from '../../../services/apiSlice';
-import { LogIn, Mail, Lock, ShieldCheck, ArrowRight, RefreshCw, KeyRound, UserCircle } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ArrowRight, RefreshCw, KeyRound } from 'lucide-react';
+import Loader from '../../../components/ui/Loader';
+import primusLogo from '../../../assets/primus_logo.png';
 
 const LoginPage = () => {
     const [step, setStep] = useState(1); // 1: Login, 2: OTP
@@ -17,11 +19,9 @@ const LoginPage = () => {
     const [resendOtpCall] = useResendOtpMutation();
     
     const navigate = useNavigate();
-    const captchaRef = useRef(null);
     const siteKey = "6LdQFoUrAAAAAPtwk0GeFVhA7fUenVLtedLApb55";
 
     useEffect(() => {
-        // Render captcha if script is loaded
         const renderCaptcha = () => {
             if (window.grecaptcha && document.getElementById('recaptcha-main') && step === 1) {
                 try {
@@ -35,14 +35,12 @@ const LoginPage = () => {
         };
 
         if (step === 1) {
-            // Short delay to ensure DOM is ready
             const timer = setTimeout(renderCaptcha, 100);
             return () => clearTimeout(timer);
         }
     }, [step]);
 
     useEffect(() => {
-        // Clear error when inputs change
         setError('');
     }, [email, password, type, otp]);
 
@@ -52,7 +50,6 @@ const LoginPage = () => {
         setIsLoading(true);
         
         try {
-            // Get captcha response
             const captcha_token = window.grecaptcha?.getResponse();
             if (!captcha_token) {
                 setError('Please complete the reCAPTCHA');
@@ -61,12 +58,9 @@ const LoginPage = () => {
             }
 
             const response = await login({ email, password, type, captcha_token }).unwrap();
-            console.log('Login request successful:', response);
             setStep(2);
         } catch (err) {
-            console.error('Login failed:', err);
             setError(err.data?.detail || 'Login failed. Please check your credentials.');
-            // Reset captcha on failure
             window.grecaptcha?.reset();
         } finally {
             setIsLoading(false);
@@ -80,19 +74,18 @@ const LoginPage = () => {
         
         try {
             const response = await verifyLogin({ email, otp, type }).unwrap();
-            console.log('Verification successful:', response);
-            
-            // Store token and vendor info
             localStorage.setItem('token', response.access_token);
             if (response.vendor_type) localStorage.setItem('vendor_type', response.vendor_type);
             if (response.vendor_name || response.name) localStorage.setItem('user_name', response.vendor_name || response.name);
             localStorage.setItem('user_email', email);
             localStorage.setItem('user_type', type);
-            
-            // Redirect to dashboard
-            navigate('/client/dashboard');
+
+            if (type === 'vendor') {
+                navigate('/vendor/dashboard');
+            } else {
+                navigate('/client/dashboard');
+            }
         } catch (err) {
-            console.error('Verification failed:', err);
             setError(err.data?.detail || 'Invalid or expired OTP.');
         } finally {
             setIsLoading(false);
@@ -111,12 +104,11 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4 font-sans">
+            {isLoading && <Loader fullScreen />}
             <div className="max-w-md w-full">
                 {/* Logo & Branding */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4">
-                        <ShieldCheck className="text-primary" size={32} />
-                    </div>
+                <div className="text-center mb-8 flex flex-col items-center">
+                    <img src={primusLogo} alt="Primus" className="w-20 h-20 object-contain mb-4" />
                     <h1 className="text-3xl font-serif font-bold text-slate-900">Primus Partners</h1>
                     <p className="text-slate-500 mt-2">Secure access to your consulting dashboard</p>
                 </div>
@@ -124,7 +116,6 @@ const LoginPage = () => {
                 <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
                     <div className="p-8">
                         {step === 1 ? (
-                            /* Login Form */
                             <form onSubmit={handleLogin} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">User Type</label>
@@ -192,12 +183,8 @@ const LoginPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Captcha */}
                                 <div className="flex justify-center py-2 min-h-[78px]">
-                                    <div 
-                                        id="recaptcha-main" 
-                                        data-sitekey={siteKey}
-                                    ></div>
+                                    <div id="recaptcha-main" data-sitekey={siteKey}></div>
                                 </div>
 
                                 {error && (
@@ -211,15 +198,10 @@ const LoginPage = () => {
                                     disabled={isLoading}
                                     className="w-full bg-primary text-white rounded-xl py-4 font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
                                 >
-                                    {isLoading ? 'Processing...' : (
-                                        <>
-                                            Sign In <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                        </>
-                                    )}
+                                    Sign In <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </form>
                         ) : (
-                            /* OTP Form */
                             <form onSubmit={handleVerifyOtp} className="space-y-6">
                                 <div className="text-center mb-6">
                                     <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-50 rounded-full mb-4">
@@ -256,7 +238,7 @@ const LoginPage = () => {
                                         disabled={isLoading || otp.length < 4}
                                         className="w-full bg-primary text-white rounded-xl py-4 font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-70"
                                     >
-                                        {isLoading ? 'Verifying...' : 'Verify & Continue'}
+                                        Verify & Continue
                                     </button>
                                     
                                     <button

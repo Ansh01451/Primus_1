@@ -1,7 +1,10 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+
+
+import screensBg from '../assets/screens_bg.png';
 
 const ClientLayout = () => {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -11,7 +14,10 @@ const ClientLayout = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div 
+      className="flex h-screen overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${screensBg})` }}
+    >
       {/* Fixed Sidebar */}
       <Sidebar />
 

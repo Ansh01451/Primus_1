@@ -16,7 +16,6 @@ const folders = [
 const stats = [
   { value: '120', label: 'Total Documents' },
   { value: '06', label: 'Recently Added' },
-  { value: '24', label: 'Shared With Client' },
   { value: '03', label: 'Pending Approval' },
 ];
 
@@ -103,7 +102,7 @@ const DocumentsPage = () => {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-3 gap-6 mb-10">
         {stats.map((s, i) => (
           <div key={i} className="bg-white border border-slate-100 card-shadow rounded-xl px-6 py-5 flex justify-between items-center">
             <div>
